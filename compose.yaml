@@ -1,0 +1,14 @@
+services:
+  admin:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3102:80"
+    environment:
+      ADMIN_API_TARGET: ${ADMIN_API_TARGET:-http://host.docker.internal:10009}
+      CHAT_API_TARGET: ${CHAT_API_TARGET:-http://host.docker.internal:10008}
+      IM_API_TARGET: ${IM_API_TARGET:-http://host.docker.internal:10002}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - /var/www/downloads:/var/www/downloads:ro

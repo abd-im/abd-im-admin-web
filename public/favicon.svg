@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <filter id="subtleShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000000" flood-opacity="0.08" />
+    </filter>
+  </defs>
+  <!-- Pure White Squircle Badge with Border -->
+  <rect x="24" y="24" width="464" height="464" rx="120" fill="#ffffff" stroke="#e4e4e7" stroke-width="12" filter="url(#subtleShadow)" />
+
+  <!-- Sleek Artistic Serif 'A' Monogram (Center Stage & Ultra Legible at 16x16) -->
+  <text x="256" y="348" font-family="Georgia, 'Times New Roman', Didot, serif" font-size="330" font-weight="bold" font-style="italic" fill="#09090b" text-anchor="middle">A</text>
+
+  <!-- Contemporary Tech Accent Dot -->
+  <circle cx="390" cy="135" r="22" fill="#09090b" />
+</svg>
