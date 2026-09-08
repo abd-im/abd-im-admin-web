@@ -6,6 +6,22 @@
 
 ## Docker
 
+### GitHub Actions 镜像
+
+工作流位于 `.github/workflows/publish-docker-image.yml`，与 Web 仓库一样手动触发：推送到 GitHub 默认分支后，在 Actions 中选择 **Publish Docker image to GHCR → Run workflow**，选择分支并填写版本标签（例如 `v0.1.0`）。
+
+镜像使用根目录的 Dockerfile 构建，架构为 `linux/amd64`，发布到 `ghcr.io/abd-im/abd-im-admin-web`。每次生成指定版本标签和 `sha-<短提交号>`；从 `main` 运行时还会更新 `latest`。工作流使用自带的 `GITHUB_TOKEN` 和 `packages: write` 权限登录 GHCR，无需另配仓库密码。
+
+构建成功后可拉取对应版本：
+
+```sh
+docker pull ghcr.io/abd-im/abd-im-admin-web:v0.1.0
+```
+
+如果 GHCR 包是私有的，部署机器须先登录 GHCR。下面的 Compose 配置默认从源码构建；部署已发布镜像时，将 `build: .` 替换为 `image: ghcr.io/abd-im/abd-im-admin-web:v0.1.0`，保留端口、环境变量和下载目录挂载，然后运行 `docker compose pull && docker compose up -d`。
+
+### 本地构建
+
 ```sh
 docker compose build
 docker compose up -d
