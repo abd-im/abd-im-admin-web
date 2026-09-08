@@ -30,6 +30,11 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
+    location ~ ^/downloads/.*\.yml$ {
+        root /var/www;
+        try_files $uri =404;
+        add_header Cache-Control "no-cache" always;
+    }
     location /downloads/ {
         alias /var/www/downloads/;
         autoindex off;

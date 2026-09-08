@@ -37,7 +37,10 @@ type Call = { path: string; body: Record<string, unknown> };
 async function setup(page: Page) {
   const calls: Call[] = [];
   await page.addInitScript((session) => {
-    localStorage.setItem("abd_im_admin_session_v1", JSON.stringify(session));
+    if (!sessionStorage.getItem("test-session-seeded")) {
+      localStorage.setItem("abd_im_admin_session_v1", JSON.stringify(session));
+      sessionStorage.setItem("test-session-seeded", "1");
+    }
     localStorage.setItem("abd_admin_language", "en");
   }, session);
   await page.route(/\/(admin|chat|im)-api\//, (route) => {
@@ -526,6 +529,24 @@ test("session expiry removes cached identity and returns to login", async ({ pag
   await expect(page).toHaveURL(/\/login$/);
   expect(await page.evaluate(() => localStorage.getItem("abd_im_admin_session_v1"))).toBeNull();
   await expect(page.getByText("Test Admin", { exact: true })).toHaveCount(0);
+});
+
+test("missing IM token clears the session and returns to login without refreshing", async ({
+  page,
+}) => {
+  await setup(page);
+  const requests: string[] = [];
+  page.on("request", (request) => requests.push(request.url()));
+  await page.route("**/im-api/user/get_users", (route) => {
+    return route.fulfill({
+      json: { errCode: 1507, errMsg: "TokenNotExistError" },
+    });
+  });
+  await page.goto("/im/users");
+  await expect(page).toHaveURL(/\/login$/);
+  expect(await page.evaluate(() => localStorage.getItem("abd_im_admin_session_v1"))).toBeNull();
+  expect(requests.filter((url) => url.endsWith("/im-api/user/get_users"))).toHaveLength(1);
+  expect(requests.some((url) => url.includes("refresh_im_token"))).toBe(false);
 });
 
 for (const kind of ["image", "video"] as const)

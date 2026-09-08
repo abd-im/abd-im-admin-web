@@ -303,6 +303,7 @@ export const en = {
     emptyFile: "Cannot upload an empty file.",
     upload: "File upload failed ({{status}}).",
     invalidSession: "The login response is incomplete. Please contact the administrator.",
+    sessionExpired: "Your session has expired. Please sign in again.",
   },
 } as const;
 

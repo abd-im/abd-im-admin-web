@@ -20,6 +20,7 @@ export function FormFields({
   return (
     <>
       {fields.map((field) => {
+        if (field.visible && !field.visible(values)) return null;
         const update = (value: string | boolean) =>
           setValues((current) => ({ ...current, [field.key]: value }));
         const label = t(field.label);

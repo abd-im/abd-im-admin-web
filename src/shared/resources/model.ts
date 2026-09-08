@@ -7,6 +7,7 @@ import type { Row } from "@/shared/lib/records";
 
 export type FormValues = Record<string, string | boolean>;
 export type FormField = {
+  visible?: (values: FormValues) => boolean;
   key: string;
   label: TranslationKey;
   type?:

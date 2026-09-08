@@ -32,6 +32,7 @@ export function useResourceAction(
   return useMutation({
     mutationFn: async (values: FormValues) => {
       for (const field of action.fields || []) {
+        if (field.visible && !field.visible(values)) continue;
         if (field.required && !String(values[field.key] || "").trim())
           throw new RequiredFieldError(field.label);
       }

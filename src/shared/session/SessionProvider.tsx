@@ -3,20 +3,13 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type PropsWithChildren,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { SESSION_KEY, SESSION_EXPIRED_EVENT, sessionSchema, type AdminSession } from "./model";
-
-function loadSession() {
-  try {
-    const result = sessionSchema.safeParse(JSON.parse(localStorage.getItem(SESSION_KEY) || "null"));
-    return result.success ? result.data : null;
-  } catch {
-    return null;
-  }
-}
+import { SESSION_KEY, type AdminSession } from "./model";
+import { loadSession, saveSession, sameLogin, SESSION_CHANGED_EVENT } from "./storage";
 
 type SessionContextValue = {
   session: AdminSession | null;
@@ -27,24 +20,32 @@ const SessionContext = createContext<SessionContextValue | null>(null);
 export function SessionProvider({ children }: PropsWithChildren) {
   const [session, setState] = useState<AdminSession | null>(loadSession);
   const client = useQueryClient();
+  const current = useRef(session);
   const value = useMemo<SessionContextValue>(
     () => ({
       session,
-      setSession: (next) => {
-        if (next) localStorage.setItem(SESSION_KEY, JSON.stringify(next));
-        else localStorage.removeItem(SESSION_KEY);
-        if (!next || session?.adminToken !== next.adminToken || session?.imToken !== next.imToken)
-          client.clear();
-        setState(next);
-      },
+      setSession: saveSession,
     }),
-    [session, client],
+    [session],
   );
   useEffect(() => {
-    const expire = () => value.setSession(null);
-    window.addEventListener(SESSION_EXPIRED_EVENT, expire);
-    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, expire);
-  }, [value]);
+    const sync = () => {
+      const next = loadSession();
+      if (!next || !sameLogin(current.current, next)) client.clear();
+      current.current = next;
+      setState(next);
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === SESSION_KEY || event.key === null) sync();
+    };
+    window.addEventListener(SESSION_CHANGED_EVENT, sync);
+    window.addEventListener("storage", onStorage);
+    sync();
+    return () => {
+      window.removeEventListener(SESSION_CHANGED_EVENT, sync);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [client]);
   return <SessionContext value={value}>{children}</SessionContext>;
 }
 

@@ -300,5 +300,6 @@ export const zhCN = {
     emptyFile: "不能上传空文件。",
     upload: "文件上传失败 ({{status}})。",
     invalidSession: "登录响应不完整，请联系管理员。",
+    sessionExpired: "登录已失效，请重新登录。",
   },
 } satisfies LocaleShape<typeof en>;

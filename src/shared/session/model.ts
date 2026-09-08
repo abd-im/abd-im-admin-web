@@ -12,4 +12,3 @@ export const sessionSchema = z.object({
 });
 export type AdminSession = z.infer<typeof sessionSchema>;
 export const SESSION_KEY = "abd_im_admin_session_v1";
-export const SESSION_EXPIRED_EVENT = "admin-session-expired";

@@ -26,8 +26,8 @@ const fields: FormField[] = [
   { key: "hot", label: "releases.hot", type: "checkbox" },
 ];
 export function releaseInput(values: FormValues): api.ReleaseInput {
-  const version = String(values.version).trim();
-  if (!valid(version)) throw new ValidationError("releases.invalidVersion");
+  const version = valid(String(values.version).trim());
+  if (!version) throw new ValidationError("releases.invalidVersion");
   const url = httpURL(String(values.url).trim());
   if (!url) throw new ValidationError("releases.invalidURL");
   return {
