@@ -22,6 +22,10 @@ pnpm dev
 
 阅读 [架构与国际化规范](docs/architecture.md) 后新增模块。依赖用 `pnpm add` / `pnpm add -D` 添加；提交 `pnpm-lock.yaml`，CI 使用 `pnpm install --frozen-lockfile`。
 
+基础 UI 使用 shadcn/ui（Radix）与 Tailwind CSS 4，组件源码位于 `src/shared/ui/`，CLI 路径由 `components.json` 配置。公共入口 `shared/ui/index.tsx` 保留后台的按钮样式、弹窗和分页接口；资源表单复用这些基础组件，业务配置仍放在各模块的 `resources.tsx`。
+
+新增组件可执行 `pnpm dlx shadcn@latest add <组件名>`。生成后沿用 `@/shared/lib/utils` 中的 `cn`，将用户可见文案接入 i18n，并检查差异，避免覆盖已有定制。Tailwind 入口为 `src/app/styles/tailwind.css`，通过语义颜色映射复用 `tokens.css` 的深浅主题；原有 CSS 加载到 `components` 层，新组件可用工具类覆盖样式。
+
 ```sh
 pnpm format
 pnpm test

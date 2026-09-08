@@ -1,7 +1,15 @@
-import type { Dispatch, SetStateAction } from "react";
+import { useId, type Dispatch, type SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 import type { FormField, FormValues } from "@/shared/resources/model";
-import { Field } from "@/shared/ui";
+import {
+  Checkbox,
+  Field,
+  Input,
+  Label,
+  NativeSelect,
+  NativeSelectOption,
+  Textarea,
+} from "@/shared/ui";
 import { EntityPicker } from "@/features/directory/EntityPicker";
 import { UploadField } from "@/features/files/UploadField";
 
@@ -17,6 +25,7 @@ export function FormFields({
   onUpload?: (busy: boolean) => void;
 }) {
   const { t } = useTranslation();
+  const formID = useId();
   return (
     <>
       {fields.map((field) => {
@@ -47,41 +56,45 @@ export function FormFields({
           );
         if (field.type === "checkbox")
           return (
-            <label className="switch-row" key={field.key}>
-              <input
-                type="checkbox"
+            <Label
+              className="switch-row font-normal"
+              key={field.key}
+              htmlFor={`${formID}-${field.key}`}
+            >
+              <Checkbox
+                id={`${formID}-${field.key}`}
                 checked={Boolean(values[field.key])}
-                onChange={(event) => update(event.target.checked)}
+                onCheckedChange={(checked) => update(checked === true)}
               />
               {label}
-            </label>
+            </Label>
           );
         return (
           <Field label={label} key={field.key}>
             {field.options ? (
-              <select
-                className="select"
+              <NativeSelect
+                className="h-[34px] bg-background py-0 dark:bg-background"
                 aria-label={label}
                 required={field.required}
                 value={String(values[field.key] ?? "")}
                 onChange={(event) => update(event.target.value)}
               >
                 {field.options.map((option) => (
-                  <option key={option.value} value={option.value}>
+                  <NativeSelectOption key={option.value} value={option.value}>
                     {t(option.label)}
-                  </option>
+                  </NativeSelectOption>
                 ))}
-              </select>
+              </NativeSelect>
             ) : field.type === "textarea" ? (
-              <textarea
-                className="textarea"
+              <Textarea
+                className="min-h-[88px] resize-y bg-background dark:bg-background"
                 required={field.required}
                 value={String(values[field.key] ?? "")}
                 onChange={(event) => update(event.target.value)}
               />
             ) : (
-              <input
-                className="input"
+              <Input
+                className="h-[34px] bg-background dark:bg-background"
                 type={field.type || "text"}
                 autoComplete={field.type === "password" ? "new-password" : "off"}
                 required={field.required}

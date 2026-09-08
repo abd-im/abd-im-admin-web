@@ -1,13 +1,18 @@
 import { X, Inbox, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import {
-  type ButtonHTMLAttributes,
-  type PropsWithChildren,
-  type ReactNode,
-  useId,
-  useRef,
-  useEffect,
-} from "react";
+import { type ButtonHTMLAttributes, type PropsWithChildren, type ReactNode, useState } from "react";
+import { cn } from "@/shared/lib/utils";
+import { Button as BaseButton } from "./button";
+import { Badge } from "./badge";
+import { Dialog, DialogContent, DialogTitle } from "./dialog";
+import { Label } from "./label";
+import { Input } from "./input";
+
+export { Input } from "./input";
+export { Textarea } from "./textarea";
+export { Label } from "./label";
+export { Checkbox } from "./checkbox";
+export { NativeSelect, NativeSelectOption } from "./native-select";
 
 export function Button({
   variant,
@@ -17,9 +22,16 @@ export function Button({
   variant?: "primary" | "danger";
 }) {
   return (
-    <button
+    <BaseButton
       type="button"
-      className={`button${variant ? ` ${variant}` : ""} ${className}`}
+      variant={variant === "primary" ? "default" : "outline"}
+      className={cn(
+        "button h-[34px] gap-[7px] px-3 py-0 text-[13px] shadow-[var(--surface-shadow)] has-[>svg]:px-3",
+        variant === "danger" &&
+          "border-destructive/35 bg-[var(--danger-soft)] text-destructive hover:bg-[var(--danger-soft)] dark:bg-[var(--danger-soft)] dark:hover:bg-[var(--danger-soft)]",
+        className.includes("icon-button") && "w-[34px] px-0 has-[>svg]:px-0",
+        className,
+      )}
       {...props}
     />
   );
@@ -31,10 +43,10 @@ export function Field({
   children,
 }: PropsWithChildren<{ label: string; grow?: boolean }>) {
   return (
-    <label className={`field${grow ? " grow" : ""}`}>
+    <Label className={cn("field grid items-start gap-[5px] font-normal", grow && "grow")}>
       <span>{label}</span>
       {children}
-    </label>
+    </Label>
   );
 }
 
@@ -84,43 +96,56 @@ export function Modal({
   onClose,
 }: PropsWithChildren<{ title: string; footer?: ReactNode; onClose: () => void }>) {
   const { t } = useTranslation();
-  const ref = useRef<HTMLDialogElement>(null);
-  const titleID = useId();
-  useEffect(() => {
-    const dialog = ref.current!;
-    dialog.showModal();
-    return () => dialog.close();
-  }, []);
+  // Resource actions mount dialogs without a DialogTrigger, so retain their focus target.
+  const [returnFocus] = useState(() => document.activeElement);
   return (
-    <dialog
-      ref={ref}
-      className="modal"
-      aria-labelledby={titleID}
-      onCancel={(event) => {
-        event.preventDefault();
-        onClose();
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
       }}
     >
-      <div className="modal-head">
-        <h2 id={titleID}>{title}</h2>
-        <Button
-          type="button"
-          title={t("common.close")}
-          className="icon-button"
-          aria-label={t("common.close")}
-          onClick={onClose}
-        >
-          <X size={16} />
-        </Button>
-      </div>
-      <div className="modal-body">{children}</div>
-      {footer && <div className="modal-foot">{footer}</div>}
-    </dialog>
+      <DialogContent
+        className="modal block w-[calc(100%-24px)] max-w-[640px] gap-0 overflow-y-auto bg-popover p-0 shadow-[var(--floating-shadow)] sm:max-w-[640px]"
+        showCloseButton={false}
+        aria-describedby={undefined}
+        onInteractOutside={(event) => event.preventDefault()}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          if (returnFocus instanceof HTMLElement && returnFocus.isConnected) returnFocus.focus();
+        }}
+      >
+        <div className="modal-head">
+          <DialogTitle className="text-base leading-normal">{title}</DialogTitle>
+          <Button
+            type="button"
+            title={t("common.close")}
+            className="icon-button"
+            aria-label={t("common.close")}
+            onClick={onClose}
+          >
+            <X size={16} />
+          </Button>
+        </div>
+        <div className="modal-body">{children}</div>
+        {footer && <div className="modal-foot">{footer}</div>}
+      </DialogContent>
+    </Dialog>
   );
 }
 
 export function StatusBadge({ active, children }: PropsWithChildren<{ active?: boolean }>) {
-  return <span className={`badge${active ? " success" : ""}`}>{children}</span>;
+  return (
+    <Badge
+      variant="secondary"
+      className={cn(
+        "min-h-[22px] px-[7px] py-0.5 text-[11px]",
+        active && "bg-[var(--success-soft)] text-[var(--success)]",
+      )}
+    >
+      {children}
+    </Badge>
+  );
 }
 
 export function Empty({ text }: { text?: string }) {
@@ -193,9 +218,9 @@ export function Pagination({
       >
         <ChevronRight size={16} />
       </Button>
-      <input
+      <Input
         key={`${page}-${pages}`}
-        className="input page-jump"
+        className="input page-jump h-[34px] w-[66px] py-0"
         type="number"
         min={1}
         max={pages}

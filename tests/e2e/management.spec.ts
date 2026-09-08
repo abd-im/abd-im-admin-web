@@ -385,6 +385,123 @@ test("profile updates the shell and password confirmation prevents invalid submi
   expect(await page.evaluate(() => localStorage.getItem("abd_im_admin_session_v1"))).toBeNull();
 });
 
+test("version controls retain native validation, empty filters, and responsive themes", async ({
+  page,
+}) => {
+  const calls = await setup(page);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/applications/versions");
+  await page.getByLabel("Platform", { exact: true }).selectOption("windows");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect
+    .poll(() => calls.filter((call) => call.path.endsWith("/page_versions")).at(-1)?.body.platform)
+    .toEqual(["windows"]);
+  await page.getByLabel("Platform", { exact: true }).selectOption("");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect
+    .poll(() => calls.filter((call) => call.path.endsWith("/page_versions")).at(-1)?.body.platform)
+    .toEqual([]);
+  await expect(page.getByLabel("Go to page", { exact: true })).toHaveCSS("width", "66px");
+  const trigger = page.getByRole("button", { name: "Add version", exact: true });
+  await trigger.click();
+  const dialog = page.getByRole("dialog", { name: "Add version", exact: true });
+  await expect(dialog.getByLabel("Platform", { exact: true })).toHaveValue("windows");
+  await expect(dialog.getByLabel("Latest priority", { exact: true })).toHaveCount(1);
+  await dialog.getByRole("button", { name: "Confirm", exact: true }).click();
+  await expect(dialog.getByLabel("Version", { exact: true })).toBeFocused();
+  expect(calls.some((call) => call.path.endsWith("/add_version"))).toBe(false);
+  await dialog.getByLabel("Version", { exact: true }).fill("1.2.3");
+  await dialog.getByLabel("Installer URL", { exact: true }).fill("https://example.com/app.exe");
+  await dialog.getByLabel("Release notes", { exact: true }).fill("Improve notification delivery.");
+  await dialog.getByLabel("Force-update flag", { exact: true }).focus();
+  await page.keyboard.press("Space");
+  await expect(
+    dialog.getByRole("checkbox", { name: "Force-update flag", exact: true }),
+  ).toBeChecked();
+  for (const [width, dark] of [
+    [1440, false],
+    [390, true],
+    [320, true],
+  ] as const) {
+    await page.setViewportSize({ width, height: 900 });
+    await page
+      .locator("html")
+      .evaluate((element, dark) => element.classList.toggle("dark", dark), dark);
+    await expect(dialog).toHaveCSS("opacity", "1");
+    const bounds = await dialog.boundingBox();
+    expect(bounds!.x).toBeGreaterThanOrEqual(0);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
+    expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+      true,
+    );
+    await page.screenshot({
+      path: `test-results/shadcn-version-${width}.png`,
+      animations: "disabled",
+    });
+  }
+  await dialog.getByRole("button", { name: "Confirm", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(trigger).toBeFocused();
+  expect(calls.find((call) => call.path.endsWith("/add_version"))?.body).toMatchObject({
+    platform: "windows",
+    version: "1.2.3",
+    force: true,
+    latest: true,
+    hot: false,
+  });
+});
+
+test("version dialog blocks dismissal and changes while a save is pending", async ({ page }) => {
+  await setup(page);
+  let finish = () => {};
+  const pending = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
+  let writes = 0;
+  await page.route("**/update_version", async (route) => {
+    writes++;
+    await pending;
+    await route.fulfill({ json: { errCode: 0, data: {} } });
+  });
+  await page.goto("/applications/versions");
+  await page.getByRole("button", { name: "Edit version", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Edit version", exact: true });
+  try {
+    await dialog.getByRole("button", { name: "Confirm", exact: true }).click();
+    await expect(
+      dialog.getByRole("checkbox", { name: "Force-update flag", exact: true }),
+    ).toBeDisabled();
+    await expect(dialog.getByLabel("Platform", { exact: true })).toBeDisabled();
+    await expect(dialog.getByLabel("Version", { exact: true })).toBeDisabled();
+    await page.keyboard.press("Escape");
+    await dialog.getByRole("button", { name: "Close", exact: true }).click();
+    await expect(dialog).toBeVisible();
+    expect(writes).toBe(1);
+  } finally {
+    finish();
+  }
+  await expect(dialog).not.toBeVisible();
+});
+
+test("nested dialogs return keyboard focus without dismissing the parent", async ({ page }) => {
+  await setup(page);
+  await page.goto("/business/default-friends");
+  const trigger = page.getByRole("button", { name: "Add default friends", exact: true });
+  await trigger.click();
+  const parent = page.getByRole("dialog", { name: "Add default friends", exact: true });
+  const select = parent.getByRole("button", { name: "Select users", exact: true });
+  await select.click();
+  const picker = page.getByRole("dialog", { name: "Default friends", exact: true });
+  await expect(picker).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(picker).not.toBeVisible();
+  await expect(parent).toBeVisible();
+  await expect(select).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(parent).not.toBeVisible();
+  await expect(trigger).toBeFocused();
+});
+
 test("version form validates semantic versions and preserves disabled flags", async ({ page }) => {
   const calls = await setup(page);
   await page.goto("/applications/versions");

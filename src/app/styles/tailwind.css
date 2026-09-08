@@ -1,0 +1,36 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "./index.css" layer(components);
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--page-canvas);
+  --color-foreground: var(--foreground);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--surface-raised);
+  --color-popover-foreground: var(--foreground);
+  --color-primary: var(--brand);
+  --color-primary-foreground: white;
+  --color-secondary: var(--surface-selected);
+  --color-secondary-foreground: var(--foreground);
+  --color-muted: var(--surface-selected);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--surface-hover);
+  --color-accent-foreground: var(--foreground);
+  --color-destructive: var(--danger);
+  --color-border: var(--surface-border);
+  --color-input: var(--surface-border);
+  --color-ring: var(--brand);
+  --radius-sm: calc(var(--radius-control) - 2px);
+  --radius-md: var(--radius-control);
+  --radius-lg: var(--radius-dialog);
+  --radius-xl: var(--radius-dialog);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+}
