@@ -1,3 +1,5 @@
+import type { Row } from "@/shared/lib/records";
+
 export type IMUser = { userID: string; nickname: string; faceURL: string; createTime: number };
 export type UserFilters = { userID: string; nickName: string };
 export type GroupFilters = { groupID: string; groupName: string };
@@ -55,6 +57,7 @@ export type MessageResult = {
     groupFaceURL: string;
     groupMemberCount: number;
     content: string;
+    message?: Row;
     sendTime: number;
   };
   isRevoked: boolean;

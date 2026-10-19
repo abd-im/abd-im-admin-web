@@ -183,7 +183,11 @@ export function MessagesPage({ group = false }: { group?: boolean }) {
                 <td>{t(messageTypes[row.chatLog.contentType] || "management.unknown")}</td>
                 <td>
                   <div className="message-cell">
-                    <MessageContent content={row.chatLog.content} type={row.chatLog.contentType} />
+                    <MessageContent
+                      content={row.chatLog.content}
+                      type={row.chatLog.contentType}
+                      message={row.chatLog.message}
+                    />
                   </div>
                 </td>
                 <td>{formatTime(row.chatLog.sendTime, i18n.language)}</td>
@@ -248,7 +252,11 @@ export function MessagesPage({ group = false }: { group?: boolean }) {
       {detail && (
         <Modal title={t("messages.preview")} onClose={() => setDetail(null)}>
           <span className="mono">{detail.chatLog.clientMsgID}</span>
-          <MessageContent content={detail.chatLog.content} type={detail.chatLog.contentType} />
+          <MessageContent
+            content={detail.chatLog.content}
+            type={detail.chatLog.contentType}
+            message={detail.chatLog.message}
+          />
           <details>
             <summary>{t("messages.raw")}</summary>
             <pre className="raw-content">{JSON.stringify(detail.chatLog, null, 2)}</pre>

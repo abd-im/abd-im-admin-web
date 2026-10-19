@@ -1,8 +1,9 @@
 import { useTranslation } from "react-i18next";
+import type { ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import type { TranslationKey } from "@/shared/i18n";
 import { httpURL } from "@/shared/lib/url";
-import { textAt, type Row } from "@/shared/lib/records";
+import { rowsAt, textAt, type Row } from "@/shared/lib/records";
 
 export const messageTypes: Record<number, TranslationKey> = {
   101: "messages.text",
@@ -18,6 +19,7 @@ export const messageTypes: Record<number, TranslationKey> = {
   114: "messages.quote",
   1400: "messages.notification",
   143: "messages.text",
+  144: "messages.components",
   118: "messages.markdown",
 };
 
@@ -37,13 +39,16 @@ export function parseContent(content: string): Row {
 export function MessageContent({
   content,
   type,
+  message,
   depth = 0,
 }: {
   content: string;
   type: number;
+  message?: Row;
   depth?: number;
 }) {
   const { t } = useTranslation();
+  if (type === 144) return <V2Content message={message ?? {}} />;
   const parsed = parseContent(content);
   const data = (
     type === 1400
@@ -119,6 +124,7 @@ export function MessageContent({
           <MessageContent
             content={JSON.stringify(data.quoteMessage)}
             type={Number((data.quoteMessage as Row).contentType || 101)}
+            message={(data.quoteMessage as Row).message as Row | undefined}
             depth={depth + 1}
           />
         </blockquote>
@@ -141,6 +147,7 @@ export function MessageContent({
               <MessageContent
                 content={JSON.stringify(element)}
                 type={Number(row.contentType)}
+                message={row.message as Row | undefined}
                 depth={depth + 1}
               />
             </blockquote>
@@ -149,4 +156,43 @@ export function MessageContent({
       {!body && !imageURL && !videoURL && !messageTypes[type] && <p>{t("messages.noPreview")}</p>}
     </div>
   );
+}
+
+function V2Content({ message }: { message: Row }) {
+  const { t } = useTranslation();
+  const attachments = rowsAt(message, "attachments");
+  const media = (item: Row): ReactNode => {
+    const file = attachments.find(
+      (file) =>
+        file.id === item.attachment_id ||
+        file.url === item.url ||
+        `attachment://${file.filename}` === item.url,
+    );
+    const url = httpURL(file?.url || item.url);
+    if (!url) return null;
+    const contentType = String(file?.content_type || item.content_type || "");
+    if (contentType.startsWith("video/")) return <video controls src={url} preload="metadata" />;
+    if (contentType.startsWith("audio/")) return <audio controls src={url} preload="metadata" />;
+    if (contentType.startsWith("image/")) return <img src={url} alt="" loading="lazy" />;
+    return (
+      <a href={url} target="_blank" rel="noreferrer">
+        {String(file?.filename || t("messages.file"))}
+      </a>
+    );
+  };
+  const render = (component: Row, index: number): ReactNode => (
+    <div key={index}>
+      {typeof component.content === "string" && (
+        <ReactMarkdown skipHtml>{component.content}</ReactMarkdown>
+      )}
+      {rowsAt(component, "components").map(render)}
+      {component.accessory != null && render(component.accessory as Row, 0)}
+      {component.media != null && media(component.media as Row)}
+      {component.file != null && media(component.file as Row)}
+      {rowsAt(component, "items").map((item, i) => (
+        <div key={i}>{item.media != null && media(item.media as Row)}</div>
+      ))}
+    </div>
+  );
+  return <div className="message-content">{rowsAt(message, "components").map(render)}</div>;
 }

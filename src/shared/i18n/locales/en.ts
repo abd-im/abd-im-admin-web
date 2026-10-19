@@ -69,6 +69,7 @@ export const en = {
     noOnline: "This user has no online sessions.",
   },
   messages: {
+    components: "Component message",
     type: "Message type",
     session: "Conversation type",
     single: "Direct message",

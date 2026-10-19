@@ -71,6 +71,7 @@ export const zhCN = {
     noOnline: "该用户当前没有在线会话。",
   },
   messages: {
+    components: "组件消息",
     type: "消息类型",
     session: "会话类型",
     single: "单聊",
